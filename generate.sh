@@ -64,41 +64,46 @@ fi
 
 
 echo creating $http
-echo "server {" >$http
-echo "    listen 80;" >>$http
-echo "    listen [::]:80;" >>$http
-echo "    server_name $host;" >>$http
-echo "    location /.well-known {" >>$http
-echo "            alias /var/www/$host/.well-known;" >>$http
-echo "    }" >>$http
-echo "    location / {" >>$http
-echo "        return 301 https://$host;" >>$http
-echo "    }" >>$http
-echo "}" >>$http
+cat << EOF > $http
+server {
+    listen 80;
+    listen [::]:80;
+    server_name $host;
+    location /.well-known {
+            alias /var/www/$host/.well-known;
+    }
+    location / {
+        return 301 https://$host;
+    }
+}
+EOF
 echo done
 
 echo creating $https
-echo "server {" >$https
-echo "    listen 443 ssl;" >>$https
-echo "    listen [::]:443 ssl;" >>$https
-echo "    server_name $host;" >>$https
-echo "    ssl_certificate /etc/letsencrypt/live/$host/fullchain.pem;" >>$https
-echo "    ssl_certificate_key /etc/letsencrypt/live/$host/privkey.pem;" >>$https
-echo "    ssl_stapling on;" >>$https
-echo "    ssl_stapling_verify on;" >>$https
-echo "    ssl_dhparam $dhparam;" >>$https
-echo "    ssl_protocols TLSv1.2;" >>$https
-echo "    add_header Strict-Transport-Security max-age=31536000;" >>$https
-echo "    location /.well-known {" >>$https
-echo "            alias /var/www/$host/.well-known;" >>$https
-echo "    }" >>$https
-echo "    location / {" >>$https
-echo "        proxy_pass  $proxy;" >>$https
-echo "        proxy_set_header X-Real-IP  \$remote_addr;" >>$https
-echo "        proxy_set_header X-Forwarded-For \$remote_addr;" >>$https
-echo "        proxy_set_header Host \$host;" >>$https
-echo "    }" >>$https
-echo "}" >>$https
+
+cat << EOF > $https
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name $host;
+    ssl_certificate /etc/letsencrypt/live/$host/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$host/privkey.pem;
+    ssl_stapling on;
+    ssl_stapling_verify on;
+    ssl_dhparam $dhparam;
+    ssl_protocols TLSv1.2;
+    add_header Strict-Transport-Security max-age=31536000;
+    location /.well-known {
+            alias /var/www/$host/.well-known;
+    }
+    location / {
+        proxy_pass  $proxy;
+        proxy_set_header X-Real-IP  \$remote_addr;
+        proxy_set_header X-Forwarded-For \$remote_addr;
+        proxy_set_header Host \$host;
+    }
+}
+EOF
 echo done
 
 echo activating http website
